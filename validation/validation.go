@@ -24,12 +24,12 @@ func setupValidate() *validator.Validate {
 }
 
 type ErrorResponse struct {
-	Field  string        `json:"field"`
-	Value  interface{}   `json:"value"`
-	Failed ErrorExpected `json:"failed"`
+	Field  string                `json:"field"`
+	Value  interface{}           `json:"value"`
+	Failed ErrorFailedConstraint `json:"failed"`
 }
 
-type ErrorExpected struct {
+type ErrorFailedConstraint struct {
 	Constraint    string `json:"constraint"`
 	Configuration string `json:"configuration"`
 }
@@ -43,7 +43,7 @@ func Validate(data interface{}) []ErrorResponse {
 			validationErrors[i] = ErrorResponse{
 				Field: err.Field(),
 				Value: err.Value(),
-				Failed: ErrorExpected{
+				Failed: ErrorFailedConstraint{
 					Constraint:    err.Tag(),
 					Configuration: err.Param(),
 				},
