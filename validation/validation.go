@@ -1,15 +1,38 @@
 package validation
 
-import "github.com/go-playground/validator/v10"
+import (
+	"github.com/go-playground/validator/v10"
+	"reflect"
+	"strings"
+)
 
-type ErrorResponse struct {
-	Field string      `json:"field"`
-	Tag   string      `json:"tag"`
-	Value interface{} `json:"value"`
-	Error string      `json:"error"`
+var validate = setupValidate()
+
+func setupValidate() *validator.Validate {
+	v := validator.New(validator.WithRequiredStructEnabled())
+	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+
+		if name == "-" {
+			return ""
+		}
+
+		return name
+	})
+
+	return v
 }
 
-var validate = validator.New(validator.WithRequiredStructEnabled())
+type ErrorResponse struct {
+	Field  string        `json:"field"`
+	Value  interface{}   `json:"value"`
+	Failed ErrorExpected `json:"failed"`
+}
+
+type ErrorExpected struct {
+	Constraint    string `json:"constraint"`
+	Configuration string `json:"configuration"`
+}
 
 func Validate(data interface{}) []ErrorResponse {
 	var validationErrors []ErrorResponse
@@ -19,9 +42,11 @@ func Validate(data interface{}) []ErrorResponse {
 		for i, err := range errs.(validator.ValidationErrors) {
 			validationErrors[i] = ErrorResponse{
 				Field: err.Field(),
-				Tag:   err.Tag(),
 				Value: err.Value(),
-				Error: err.Error(),
+				Failed: ErrorExpected{
+					Constraint:    err.Tag(),
+					Configuration: err.Param(),
+				},
 			}
 		}
 	}

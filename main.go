@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/sean-b-martin/dynamic-webforms-server/controller"
 	"log"
 )
@@ -16,8 +17,7 @@ func main() {
 			return decoder.Decode(v)
 		},
 	})
-
+	app.Use(recover.New())
 	controller.NewUserController(app.Group("/users"))
-
 	log.Fatal(app.Listen(":3000"))
 }
