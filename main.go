@@ -17,6 +17,7 @@ func main() {
 			return decoder.Decode(v)
 		},
 	})
+
 	app.Use(recover.New())
 	controller.NewUserController(app.Group("/users"))
 	log.Fatal(app.Listen(":3000"))
