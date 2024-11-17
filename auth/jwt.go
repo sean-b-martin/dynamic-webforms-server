@@ -15,6 +15,7 @@ type JWTService struct {
 	signingMethodAlg  []string
 	expiryTimeMinutes int
 	signingKey        []byte
+	parser            *jwt.Parser
 }
 
 type JWTClaims struct {
@@ -30,6 +31,7 @@ func NewJWTService(options ...JWTServiceOptions) (*JWTService, error) {
 		signingMethodAlg:  []string{jwt.SigningMethodHS512.Alg()},
 		expiryTimeMinutes: 30,
 		signingKey:        nil,
+		parser:            nil,
 	}
 
 	for _, option := range options {
@@ -44,6 +46,9 @@ func NewJWTService(options ...JWTServiceOptions) (*JWTService, error) {
 			return nil, fmt.Errorf("failed to generate signing key: %w", err)
 		}
 	}
+
+	service.parser = jwt.NewParser(jwt.WithIssuer(service.issuer), jwt.WithExpirationRequired(), jwt.WithIssuedAt(),
+		jwt.WithValidMethods(service.signingMethodAlg))
 
 	return &service, nil
 }
@@ -109,7 +114,15 @@ func (j *JWTService) NewToken(userID uuid.UUID) (string, error) {
 	return jwt.NewWithClaims(j.signingMethod, claims).SignedString(j.signingKey)
 }
 
-func (j *JWTService) ValidateToken(tokenString string) (*jwt.Token, error) {
-	//
-	return nil, nil
+func (j *JWTService) ValidateToken(tokenString string) (JWTClaims, error) {
+	claims := &JWTClaims{}
+	_, err := j.parser.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return j.signingKey, nil
+	})
+
+	if err != nil {
+		return JWTClaims{}, err
+	}
+
+	return *claims, nil
 }

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -108,6 +110,32 @@ func TestWithSigningKey(t *testing.T) {
 	}
 }
 
-func TestJWTService_ValidateToken(t *testing.T) {
+func TestJWTService_ValidateTokenInvalid(t *testing.T) {
+	service, err := NewJWTService(WithSigningKey([]byte("test-valid-and-secure-long-signing-key-greater-than-64-bytes!!!!")))
+	assert.NoError(t, err)
+	assert.NotNil(t, service)
 
+	token, err := service.NewToken(uuid.New())
+	assert.NoError(t, err)
+	assert.NotEmpty(t, token)
+
+	// valid token
+	claims, err := service.ValidateToken(token)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, claims)
+	fmt.Println(token)
+
+	// invalid tokens
+
+	// expired
+	claims, err = service.ValidateToken("eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkeW5hbWljLXdlYmZvcm1zIiwic3ViIjoiMWU4MmVlY2EtNjkyOC00OWNkLWEwZTMtYzAxNjA1NDFjMjI3IiwiZXhwIjoxNzMxNzk5NDc5LCJpYXQiOjE3MzE3OTc2NzksImp0aSI6ImIzNTE3YTM4LTI0NDEtNGI2My04YTA4LTAzZGIyMmNiYjYyZSJ9.46gWFTwcufwyCrE1XkOkRm769BuxJr92EKPiMbVWCooKwdhDyLRoKtpRUjVa7KQtRAJKxux6RhD7OQwtLO3itA")
+	assert.ErrorIs(t, err, jwt.ErrTokenExpired)
+	assert.Empty(t, claims)
+
+	// invalid signing key
+	service2, _ := NewJWTService(WithSigningKey([]byte("test-valid-and-secure-long-signing-key-greater-than-64-bytes-but-different!!!!")))
+	token, err = service2.NewToken(uuid.New())
+	claims, err = service.ValidateToken(token)
+	assert.ErrorIs(t, err, jwt.ErrTokenSignatureInvalid)
+	assert.Empty(t, claims)
 }
