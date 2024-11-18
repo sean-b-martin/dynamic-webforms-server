@@ -12,7 +12,7 @@ type TableID struct {
 type UserModel struct {
 	bun.BaseModel `bun:"table:users"`
 	TableID
-	Username string `bun:"username,type:varchar(255),notnull"`
+	Username string `bun:"username,type:varchar(128),notnull"`
 	Password string `bun:"password,type:varchar(60),notnull"`
 }
 
@@ -20,14 +20,14 @@ type FormModel struct {
 	bun.BaseModel `bun:"table:forms"`
 	TableID
 	UserID string `bun:"user_id,type:uuid"`
-	Title  string `bun:"title,type:varchar(255),notnull"`
+	Title  string `bun:"title,type:varchar(256),notnull"`
 }
 
 type FormSchemaModel struct {
 	bun.BaseModel `bun:"table:form_schemas"`
 	TableID
 	FormID   uuid.UUID `bun:"form_id,type:uuid,notnull"`
-	Title    string    `bun:"title,type:varchar(255),notnull"`
+	Title    string    `bun:"title,type:varchar(256),notnull"`
 	Version  string    `bun:"version,type:varchar(64),notnull"`
 	Schema   []byte    `bun:"schema,type:jsonb"`
 	ReadOnly bool      `bun:"read_only,notnull,default:false"`
