@@ -5,3 +5,4 @@
 *.test
 *.out
 .env
+config.json
