@@ -12,7 +12,7 @@ type TableID struct {
 type UserModel struct {
 	bun.BaseModel `bun:"table:users"`
 	TableID
-	Username string `bun:"username,type:varchar(128),notnull"`
+	Username string `bun:"username,type:varchar(128),notnull,unique"`
 	Password string `bun:"password,type:varchar(60),notnull"`
 }
 

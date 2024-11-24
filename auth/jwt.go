@@ -22,9 +22,9 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-type JWTServiceOptions func(*JWTService) error
+type JWTServiceOption func(*JWTService) error
 
-func NewJWTService(options ...JWTServiceOptions) (*JWTService, error) {
+func NewJWTService(options ...JWTServiceOption) (*JWTService, error) {
 	service := JWTService{
 		issuer:            "dynamic-webforms",
 		signingMethod:     jwt.SigningMethodHS512,
@@ -53,14 +53,14 @@ func NewJWTService(options ...JWTServiceOptions) (*JWTService, error) {
 	return &service, nil
 }
 
-func WithIssuer(issuer string) JWTServiceOptions {
+func WithIssuer(issuer string) JWTServiceOption {
 	return func(s *JWTService) error {
 		s.issuer = issuer
 		return nil
 	}
 }
 
-func WithExpiryTimeMinutes(expiryTimeMinutes int) JWTServiceOptions {
+func WithExpiryTimeMinutes(expiryTimeMinutes int) JWTServiceOption {
 	return func(s *JWTService) error {
 		if expiryTimeMinutes <= 0 {
 			return errors.New("expiryTimeMinutes must be greater than zero")
@@ -71,7 +71,7 @@ func WithExpiryTimeMinutes(expiryTimeMinutes int) JWTServiceOptions {
 	}
 }
 
-func WithSigningKey(signingKey []byte) JWTServiceOptions {
+func WithSigningKey(signingKey []byte) JWTServiceOption {
 	return func(s *JWTService) error {
 		if signingKey == nil || len(signingKey) < 64 {
 			return errors.New("signingKey must be greater than 64 bytes")
