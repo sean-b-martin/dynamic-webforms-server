@@ -13,7 +13,7 @@ func AllowedContentType(allowedContentTypes []string) fiber.Handler {
 		var reqContentType string
 
 		if headers, ok := ctx.GetReqHeaders()[fiber.HeaderContentType]; !ok || len(headers) == 0 {
-			return ctx.SendStatus(fiber.StatusBadRequest)
+			return fiber.ErrBadRequest
 		} else {
 			reqContentType = headers[0]
 		}
@@ -24,7 +24,7 @@ func AllowedContentType(allowedContentTypes []string) fiber.Handler {
 			}
 		}
 
-		return ctx.SendStatus(fiber.StatusUnsupportedMediaType)
+		return fiber.ErrUnsupportedMediaType
 	}
 }
 

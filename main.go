@@ -7,8 +7,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/sean-b-martin/dynamic-webforms-server/auth"
 	"github.com/sean-b-martin/dynamic-webforms-server/controller"
 	"github.com/sean-b-martin/dynamic-webforms-server/database"
+	"github.com/sean-b-martin/dynamic-webforms-server/middleware"
 	"log"
 	"os"
 )
@@ -46,6 +48,13 @@ func main() {
 	})
 
 	app.Use(recover.New())
-	controller.NewUserController(app.Group("/users"))
+
+	jwtService, err := auth.NewJWTService()
+	if err != nil {
+		log.Fatal(fmt.Errorf("error creating JWT service: %w", err))
+	}
+
+	authMiddleware := middleware.NewJWTAuth(jwtService)
+	controller.NewUserController(app.Group("/users"), authMiddleware)
 	log.Fatal(app.Listen(":3000"))
 }
