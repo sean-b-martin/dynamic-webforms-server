@@ -23,7 +23,6 @@ func parseAndValidateRequestData(ctx *fiber.Ctx, paramsOut interface{}, bodyOut 
 		}
 
 		if validationErrors := validation.Validate(bodyOut); len(validationErrors) > 0 {
-			ctx.Status(fiber.StatusUnprocessableEntity).JSON(validationErrors)
 			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(validationErrors), false
 		}
 	}
