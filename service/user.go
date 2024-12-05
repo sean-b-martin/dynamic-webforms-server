@@ -14,6 +14,8 @@ type UserService interface {
 	RegisterUser(user model.UserModel) error
 	LoginUser(user model.UserModel) (string, error)
 	GetUserById(id uuid.UUID) (model.UserModel, error)
+	UpdateUser(id uuid.UUID, password string) error
+	DeleteUser(id uuid.UUID) error
 }
 
 type userServiceImpl struct {
@@ -80,7 +82,15 @@ func (s *userServiceImpl) LoginUser(user model.UserModel) (string, error) {
 	return s.jwtService.NewToken(dbUser.ID)
 }
 
-// TODO Update
+func (s *userServiceImpl) UpdateUser(id uuid.UUID, password string) error {
+	hash, err := s.passwordService.HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	user := model.UserModel{Password: hash}
+	return s.dbService.UpdateModel(user, id, "password")
+}
 
 func (s *userServiceImpl) DeleteUser(id uuid.UUID) error {
 	return s.dbService.DeleteModelByID(id)

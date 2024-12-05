@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -33,12 +34,24 @@ func (g *genericDBServiceImpl[T]) InsertModel(model T, columns ...string) error 
 }
 
 func (g *genericDBServiceImpl[T]) UpdateModel(model T, id uuid.UUID, columns ...string) error {
-	_, err := g.db.NewUpdate().Model(&model).Column(columns...).Where("id = ?", id).Exec(context.Background())
-	return err
+
+	if res, err := g.db.NewUpdate().Model(&model).Column(columns...).Where("id = ?", id).
+		Exec(context.Background()); err != nil {
+		return err
+	} else if rows, _ := res.RowsAffected(); rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func (g *genericDBServiceImpl[T]) DeleteModelByID(id uuid.UUID) error {
 	var model T
-	_, err := g.db.NewDelete().Model(model).Where("id = ?", id).Exec(context.Background())
-	return err
+	if res, err := g.db.NewDelete().Model(&model).Where("id = ?", id).Exec(context.Background()); err != nil {
+		return err
+	} else if rows, _ := res.RowsAffected(); rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
