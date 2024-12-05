@@ -41,9 +41,7 @@ func (u *UserController) GetCurrentLogin(ctx *fiber.Ctx) error {
 
 func (u *UserController) LoginUser(ctx *fiber.Ctx) error {
 	var user userRequestData
-	if err, ok := parseAndValidateRequestData(ctx, nil, &user); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	} else if !ok {
+	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
 		return nil
 	}
 
@@ -57,9 +55,7 @@ func (u *UserController) LoginUser(ctx *fiber.Ctx) error {
 
 func (u *UserController) RegisterUser(ctx *fiber.Ctx) error {
 	var user userRequestData
-	if err, ok := parseAndValidateRequestData(ctx, nil, &user); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	} else if !ok {
+	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
 		return nil
 	}
 

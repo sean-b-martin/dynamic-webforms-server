@@ -5,27 +5,30 @@ import (
 	"github.com/sean-b-martin/dynamic-webforms-server/validation"
 )
 
-// TODO change function to only return one value
-func parseAndValidateRequestData(ctx *fiber.Ctx, paramsOut interface{}, bodyOut interface{}) (error, bool) {
+func parseAndValidateRequestData(ctx *fiber.Ctx, paramsOut interface{}, bodyOut interface{}) bool {
 	if paramsOut != nil {
 		if err := ctx.ParamsParser(paramsOut); err != nil {
-			return err, false
+			_ = ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+			return false
 		}
 
 		if validationErrors := validation.Validate(paramsOut); len(validationErrors) > 0 {
-			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(validationErrors), false
+			_ = ctx.Status(fiber.StatusUnprocessableEntity).JSON(validationErrors)
+			return false
 		}
 	}
 
 	if bodyOut != nil {
 		if err := ctx.BodyParser(bodyOut); err != nil {
-			return err, false
+			_ = ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+			return false
 		}
 
 		if validationErrors := validation.Validate(bodyOut); len(validationErrors) > 0 {
-			return ctx.Status(fiber.StatusUnprocessableEntity).JSON(validationErrors), false
+			_ = ctx.Status(fiber.StatusUnprocessableEntity).JSON(validationErrors)
+			return false
 		}
 	}
 
-	return nil, true
+	return true
 }
