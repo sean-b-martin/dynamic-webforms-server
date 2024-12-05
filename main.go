@@ -11,6 +11,8 @@ import (
 	"github.com/sean-b-martin/dynamic-webforms-server/controller"
 	"github.com/sean-b-martin/dynamic-webforms-server/database"
 	"github.com/sean-b-martin/dynamic-webforms-server/middleware"
+	"github.com/sean-b-martin/dynamic-webforms-server/service"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
 )
@@ -22,7 +24,7 @@ func main() {
 		log.Fatal(fmt.Errorf("error reading config.json: %w", err))
 	}
 
-	var dbConfig database.DBConfig
+	var dbConfig database.ConnectionConfig
 	if err = json.Unmarshal(data, &dbConfig); err != nil {
 		log.Fatal(fmt.Errorf("error parsing config.json: %w", err))
 	}
@@ -54,7 +56,13 @@ func main() {
 		log.Fatal(fmt.Errorf("error creating JWT service: %w", err))
 	}
 
+	passwordService, err := auth.NewPasswordService(bcrypt.DefaultCost)
+	if err != nil {
+		log.Fatal(fmt.Errorf("error creating password service: %w", err))
+	}
+
 	authMiddleware := middleware.NewJWTAuth(jwtService)
-	controller.NewUserController(app.Group("/users"), authMiddleware)
+	controller.NewUserController(app.Group("/users"), authMiddleware,
+		service.NewUserService(db, passwordService, jwtService))
 	log.Fatal(app.Listen(":3000"))
 }

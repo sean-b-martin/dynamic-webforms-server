@@ -8,7 +8,7 @@ import (
 	"github.com/uptrace/bun/driver/pgdriver"
 )
 
-type DBConfig struct {
+type ConnectionConfig struct {
 	Host     string `json:"host" validate:"required"`
 	Port     int    `json:"port"`
 	Username string `json:"username" validate:"required"`
@@ -16,7 +16,7 @@ type DBConfig struct {
 	SSLMode  string `json:"SSLMode" validate:"required"`
 }
 
-func (d *DBConfig) AsDSN() string {
+func (d *ConnectionConfig) AsDSN() string {
 	if d.Port == 0 {
 		d.Port = 5432
 	}
@@ -24,8 +24,8 @@ func (d *DBConfig) AsDSN() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/dynamic-forms?sslmode=%s", d.Username, d.Password, d.Host, d.Port, d.SSLMode)
 }
 
-func CreateDatabaseConnection(dbConfig DBConfig) (*bun.DB, error) {
-	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dbConfig.AsDSN())))
+func CreateDatabaseConnection(config ConnectionConfig) (*bun.DB, error) {
+	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(config.AsDSN())))
 
 	db := bun.NewDB(sqlDB, pgdialect.New())
 	if err := db.Ping(); err != nil {

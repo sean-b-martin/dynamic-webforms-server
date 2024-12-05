@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/sean-b-martin/dynamic-webforms-server/auth"
 	"strings"
 )
@@ -33,7 +34,12 @@ func (j *JWTAuth) Handle() fiber.Handler {
 			return fiber.ErrUnauthorized
 		}
 
-		c.Locals(UserIDLocal, claims.Subject)
+		userID, err := uuid.Parse(claims.Subject)
+		if err != nil {
+			return fiber.ErrUnauthorized
+		}
+
+		c.Locals(UserIDLocal, userID)
 
 		return c.Next()
 	}
