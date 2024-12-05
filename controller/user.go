@@ -14,15 +14,15 @@ type UserController struct {
 	service service.UserService
 }
 
-func NewUserController(router fiber.Router, authService *middleware.JWTAuth, userService service.UserService) *UserController {
+func NewUserController(router fiber.Router, authMiddleware *middleware.JWTAuth, userService service.UserService) *UserController {
 	controller := UserController{service: userService}
-	router.Get("/login", authService.Handle(), controller.GetCurrentLogin)
-	router.Delete("/", authService.Handle(), controller.DeleteUser)
+	router.Get("/login", authMiddleware.Handle(), controller.GetCurrentLogin)
+	router.Delete("/", authMiddleware.Handle(), controller.DeleteUser)
 
 	router.Use(middleware.AllowedContentTypeWithJSON())
 	router.Post("/register", controller.RegisterUser)
 	router.Post("/login", controller.LoginUser)
-	router.Patch("/", authService.Handle(), controller.UpdateUser)
+	router.Patch("/", authMiddleware.Handle(), controller.UpdateUser)
 
 	return &controller
 }
