@@ -9,6 +9,7 @@ import (
 
 type GenericDBService[T any] interface {
 	GetModelByID(id uuid.UUID) (T, error)
+	GetModels(whereQuery string, args ...interface{}) ([]T, error)
 	InsertModel(model T, columns ...string) error
 	UpdateModel(model T, id uuid.UUID, columns ...string) error
 	DeleteModelByID(id uuid.UUID) error
@@ -20,6 +21,18 @@ type genericDBServiceImpl[T any] struct {
 
 func NewGenericDBService[T any](db *bun.DB) GenericDBService[T] {
 	return &genericDBServiceImpl[T]{db: db}
+}
+
+func (g *genericDBServiceImpl[T]) GetModels(whereQuery string, args ...interface{}) ([]T, error) {
+	var models []T
+
+	query := g.db.NewSelect().Model((*T)(nil))
+	if whereQuery != "" {
+		query.Where(whereQuery, args...)
+	}
+
+	err := query.Scan(context.Background(), &models)
+	return models, err
 }
 
 func (g *genericDBServiceImpl[T]) GetModelByID(id uuid.UUID) (T, error) {

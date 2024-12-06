@@ -40,9 +40,7 @@ func (f *formServiceImpl) GetFormsOfUser(userID uuid.UUID) ([]model.FormModel, e
 }
 
 func (f *formServiceImpl) GetForms() ([]model.FormModel, error) {
-	var forms []model.FormModel
-	err := f.db.NewSelect().Model((*model.FormModel)(nil)).Scan(context.Background(), &forms)
-	return forms, err
+	return f.dbService.GetModels("")
 }
 
 func (f *formServiceImpl) GetForm(formID uuid.UUID) (model.FormModel, error) {
