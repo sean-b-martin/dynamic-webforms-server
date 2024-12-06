@@ -15,11 +15,10 @@ func NewFormController(router fiber.Router, authMiddleware *middleware.JWTAuth, 
 	controller := FormController{service: service}
 	router.Get("/my-forms", authMiddleware.Handle(), controller.GetMyForms)
 	router.Get("/:formID", controller.GetForm)
-
-	router.Use(authMiddleware.Handle())
-	router.Post("/", controller.CreateForm)
-	router.Patch("/:formID", controller.UpdateForm)
-	router.Delete("/:formID", controller.DeleteForm)
+	router.Get("/", controller.GetForms)
+	router.Post("/", authMiddleware.Handle(), controller.CreateForm)
+	router.Patch("/:formID", authMiddleware.Handle(), controller.UpdateForm)
+	router.Delete("/:formID", authMiddleware.Handle(), controller.DeleteForm)
 	return &controller
 }
 
@@ -29,6 +28,20 @@ type formIDPath struct {
 
 type FormRequest struct {
 	Title string `json:"title" validate:"required,min=1,max=256"`
+}
+
+func (c *FormController) GetForms(ctx *fiber.Ctx) error {
+	forms, err := c.service.GetForms()
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	if forms == nil {
+		return ctx.Status(fiber.StatusOK).JSON([]struct{}{})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(forms)
 }
 
 func (c *FormController) GetForm(ctx *fiber.Ctx) error {

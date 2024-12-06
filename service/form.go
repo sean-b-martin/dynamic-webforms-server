@@ -12,6 +12,7 @@ import (
 type FormService interface {
 	GetFormsOfUser(userID uuid.UUID) ([]model.FormModel, error)
 	GetForm(formID uuid.UUID) (model.FormModel, error)
+	GetForms() ([]model.FormModel, error)
 	CreateForm(userID uuid.UUID, title string) error
 	UpdateForm(userID uuid.UUID, id uuid.UUID, title string) error
 	DeleteForm(userID uuid.UUID, id uuid.UUID) error
@@ -36,6 +37,12 @@ func (f *formServiceImpl) GetFormsOfUser(userID uuid.UUID) ([]model.FormModel, e
 	}
 
 	return forms, nil
+}
+
+func (f *formServiceImpl) GetForms() ([]model.FormModel, error) {
+	var forms []model.FormModel
+	err := f.db.NewSelect().Model((*model.FormModel)(nil)).Scan(context.Background(), &forms)
+	return forms, err
 }
 
 func (f *formServiceImpl) GetForm(formID uuid.UUID) (model.FormModel, error) {
@@ -92,7 +99,7 @@ func (f *formServiceImpl) DeleteForm(userID uuid.UUID, id uuid.UUID) error {
 		return ErrNoPermission
 	}
 
-	if res, err := tx.NewDelete().Model(&model.FormModel{}).Where("id = ?", id).Exec(context.Background()); err != nil {
+	if res, err := tx.NewDelete().Model((*model.FormModel)(nil)).Where("id = ?", id).Exec(context.Background()); err != nil {
 		return err
 	} else if rows, _ := res.RowsAffected(); rows == 0 {
 		return sql.ErrNoRows

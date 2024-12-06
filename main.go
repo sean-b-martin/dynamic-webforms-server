@@ -65,6 +65,6 @@ func main() {
 	controller.NewUserController(app.Group("/users"), authMiddleware,
 		service.NewUserService(db, passwordService, jwtService))
 	controller.NewFormController(app.Group("/forms"), authMiddleware, service.NewFormService(db))
-
+	controller.NewSchemaController(app.Group("/forms/:formID/"), authMiddleware, service.NewSchemaService(db))
 	log.Fatal(app.Listen(":3000"))
 }
