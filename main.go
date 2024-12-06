@@ -15,6 +15,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
+	"os/signal"
+	"time"
 )
 
 func main() {
@@ -48,7 +50,6 @@ func main() {
 			return decoder.Decode(v)
 		},
 	})
-
 	app.Use(recover.New())
 
 	jwtService, err := auth.NewJWTService()
@@ -66,5 +67,18 @@ func main() {
 		service.NewUserService(db, passwordService, jwtService))
 	controller.NewFormController(app.Group("/forms"), authMiddleware, service.NewFormService(db))
 	controller.NewSchemaController(app.Group("/forms/:formID/"), authMiddleware, service.NewSchemaService(db))
-	log.Fatal(app.Listen(":3000"))
+
+	// shutdown server gracefully
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		if err := app.ShutdownWithTimeout(1 * time.Minute); err != nil {
+			log.Fatal(fmt.Errorf("error shutting down server: %w", err))
+		}
+	}()
+
+	if err := app.Listen(":3000"); err != nil {
+		log.Fatal(err)
+	}
 }
