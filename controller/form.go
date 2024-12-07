@@ -22,14 +22,6 @@ func NewFormController(router fiber.Router, authMiddleware *middleware.JWTAuth, 
 	return &controller
 }
 
-type formIDPath struct {
-	FormID uuid.UUID `json:"formID" validate:"required,uuid"`
-}
-
-type FormRequest struct {
-	Title string `json:"title" validate:"required,min=1,max=256"`
-}
-
 func (c *FormController) GetForms(ctx *fiber.Ctx) error {
 	forms, err := c.service.GetForms()
 
@@ -45,7 +37,7 @@ func (c *FormController) GetForms(ctx *fiber.Ctx) error {
 }
 
 func (c *FormController) GetForm(ctx *fiber.Ctx) error {
-	var formID formIDPath
+	var formID requestPathFormID
 	if ok := parseAndValidateRequestData(ctx, &formID, nil); !ok {
 		return nil
 	}
@@ -55,7 +47,7 @@ func (c *FormController) GetForm(ctx *fiber.Ctx) error {
 		return serviceErrToResponse(ctx, err)
 	}
 
-	return ctx.JSON(form)
+	return ctx.Status(fiber.StatusOK).JSON(form)
 }
 
 func (c *FormController) GetMyForms(ctx *fiber.Ctx) error {
@@ -72,7 +64,7 @@ func (c *FormController) GetMyForms(ctx *fiber.Ctx) error {
 }
 
 func (c *FormController) CreateForm(ctx *fiber.Ctx) error {
-	var form FormRequest
+	var form requestDataTitle
 	if ok := parseAndValidateRequestData(ctx, nil, &form); !ok {
 		return nil
 	}
@@ -85,8 +77,8 @@ func (c *FormController) CreateForm(ctx *fiber.Ctx) error {
 }
 
 func (c *FormController) UpdateForm(ctx *fiber.Ctx) error {
-	var formID formIDPath
-	var form FormRequest
+	var formID requestPathFormID
+	var form requestDataTitle
 
 	if ok := parseAndValidateRequestData(ctx, &formID, &form); !ok {
 		return nil
@@ -100,7 +92,7 @@ func (c *FormController) UpdateForm(ctx *fiber.Ctx) error {
 }
 
 func (c *FormController) DeleteForm(ctx *fiber.Ctx) error {
-	var formID formIDPath
+	var formID requestPathFormID
 	if ok := parseAndValidateRequestData(ctx, nil, &formID); !ok {
 		return nil
 	}

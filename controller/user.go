@@ -27,23 +27,6 @@ func NewUserController(router fiber.Router, authMiddleware *middleware.JWTAuth, 
 	return &controller
 }
 
-type usernameRequestData struct {
-	Username string `json:"username" validate:"required,min=3,max=32"`
-}
-
-type passwordRequestData struct {
-	Password string `json:"password" validate:"required,min=8,max=72"`
-}
-
-type userRequestData struct {
-	usernameRequestData
-	passwordRequestData
-}
-
-type userUpdateData struct {
-	passwordRequestData
-}
-
 func (u *UserController) GetCurrentLogin(ctx *fiber.Ctx) error {
 	user, err := u.service.GetUserById(ctx.Locals(middleware.UserIDLocal).(uuid.UUID))
 	if err != nil {
@@ -58,7 +41,7 @@ func (u *UserController) GetCurrentLogin(ctx *fiber.Ctx) error {
 }
 
 func (u *UserController) LoginUser(ctx *fiber.Ctx) error {
-	var user userRequestData
+	var user requestDataUser
 	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
 		return nil
 	}
@@ -72,7 +55,7 @@ func (u *UserController) LoginUser(ctx *fiber.Ctx) error {
 }
 
 func (u *UserController) RegisterUser(ctx *fiber.Ctx) error {
-	var user userRequestData
+	var user requestDataUser
 	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
 		return nil
 	}
@@ -88,7 +71,7 @@ func (u *UserController) RegisterUser(ctx *fiber.Ctx) error {
 }
 
 func (u *UserController) UpdateUser(ctx *fiber.Ctx) error {
-	var user userUpdateData
+	var user requestDataUpdateUser
 	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
 		return nil
 	}

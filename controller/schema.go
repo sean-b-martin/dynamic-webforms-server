@@ -2,7 +2,9 @@ package controller
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/sean-b-martin/dynamic-webforms-server/middleware"
+	"github.com/sean-b-martin/dynamic-webforms-server/model"
 	"github.com/sean-b-martin/dynamic-webforms-server/service"
 )
 
@@ -22,16 +24,56 @@ func NewSchemaController(router fiber.Router, authMiddleware *middleware.JWTAuth
 }
 
 func (s *SchemaController) GetFormSchemas(ctx *fiber.Ctx) error {
+	var formID requestPathFormID
+	if !parseAndValidateRequestData(ctx, &formID, nil) {
+		return nil
+	}
 
-	return fiber.ErrInternalServerError
+	schemas, err := s.service.GetSchemas(formID.FormID)
+	if err != nil {
+		return serviceErrToResponse(ctx, err)
+	}
+
+	if len(schemas) == 0 {
+		return ctx.Status(fiber.StatusOK).JSON([]struct{}{})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(schemas)
 }
 
 func (s *SchemaController) GetSchema(ctx *fiber.Ctx) error {
-	return fiber.ErrInternalServerError
+	var ids requestPathFormAndSchemaID
+	if !parseAndValidateRequestData(ctx, &ids, nil) {
+		return nil
+	}
+
+	schema, err := s.service.GetSchema(ids.FormID, ids.SchemaID)
+	if err != nil {
+		return serviceErrToResponse(ctx, err)
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(schema)
 }
 
 func (s *SchemaController) CreateSchema(ctx *fiber.Ctx) error {
-	return fiber.ErrInternalServerError
+	var formID requestPathFormID
+	var schemaData requestDataCreateSchema
+	if !parseAndValidateRequestData(ctx, &formID, schemaData) {
+		return nil
+	}
+
+	err := s.service.CreateSchema(formID.FormID, ctx.Locals(middleware.UserIDLocal).(uuid.UUID), model.FormSchemaModel{
+		Title:    schemaData.Title,
+		Version:  schemaData.Version,
+		Schema:   schemaData.Schema,
+		ReadOnly: schemaData.ReadOnly,
+	})
+
+	if err != nil {
+		return serviceErrToResponse(ctx, err)
+	}
+
+	return ctx.SendStatus(fiber.StatusCreated)
 }
 
 func (s *SchemaController) UpdateSchema(ctx *fiber.Ctx) error {

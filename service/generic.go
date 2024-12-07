@@ -9,6 +9,7 @@ import (
 
 type GenericDBService[T any] interface {
 	GetModelByID(id uuid.UUID) (T, error)
+	GetModel(whereQuery string, args ...interface{}) (T, error)
 	GetModels(whereQuery string, args ...interface{}) ([]T, error)
 	InsertModel(model T, columns ...string) error
 	UpdateModel(model T, id uuid.UUID, columns ...string) error
@@ -38,6 +39,12 @@ func (g *genericDBServiceImpl[T]) GetModels(whereQuery string, args ...interface
 func (g *genericDBServiceImpl[T]) GetModelByID(id uuid.UUID) (T, error) {
 	var model T
 	err := g.db.NewSelect().Model(&model).Where("id = ?", id).Scan(context.Background())
+	return model, err
+}
+
+func (g *genericDBServiceImpl[T]) GetModel(whereQuery string, args ...interface{}) (T, error) {
+	var model T
+	err := g.db.NewSelect().Model(&model).Where(whereQuery, args...).Scan(context.Background())
 	return model, err
 }
 
