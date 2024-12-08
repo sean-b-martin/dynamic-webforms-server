@@ -16,9 +16,9 @@ func NewSchemaController(router fiber.Router, authMiddleware *middleware.JWTAuth
 	controller := SchemaController{service: service}
 	router.Get("/", controller.GetFormSchemas)
 	router.Get("/:schemaID", controller.GetSchema)
-	router.Post("/", controller.CreateSchema)
-	router.Patch("/:schemaID", controller.UpdateSchema)
-	router.Delete("/:schemaID", controller.DeleteSchema)
+	router.Post("/", authMiddleware.Handle(), controller.CreateSchema)
+	router.Patch("/:schemaID", authMiddleware.Handle(), controller.UpdateSchema)
+	router.Delete("/:schemaID", authMiddleware.Handle(), controller.DeleteSchema)
 
 	return &controller
 }
@@ -62,7 +62,7 @@ func (s *SchemaController) CreateSchema(ctx *fiber.Ctx) error {
 		return nil
 	}
 
-	err := s.service.CreateSchema(formID.FormID, ctx.Locals(middleware.UserIDLocal).(uuid.UUID), model.FormSchemaModel{
+	err := s.service.CreateSchema(ctx.Locals(middleware.UserIDLocal).(uuid.UUID), formID.FormID, model.FormSchemaModel{
 		Title:    schemaData.Title,
 		Version:  schemaData.Version,
 		Schema:   schemaData.Schema,
@@ -81,5 +81,15 @@ func (s *SchemaController) UpdateSchema(ctx *fiber.Ctx) error {
 }
 
 func (s *SchemaController) DeleteSchema(ctx *fiber.Ctx) error {
-	return fiber.ErrInternalServerError
+	var ids requestPathFormAndSchemaID
+
+	if !parseAndValidateRequestData(ctx, &ids, nil) {
+		return nil
+	}
+
+	if err := s.service.DeleteSchema(ctx.Locals(middleware.UserIDLocal).(uuid.UUID), ids.FormID, ids.SchemaID); err != nil {
+		return serviceErrToResponse(ctx, err)
+	}
+
+	return ctx.SendStatus(fiber.StatusOK)
 }

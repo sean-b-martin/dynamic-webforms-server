@@ -54,7 +54,6 @@ func (g *genericDBServiceImpl[T]) InsertModel(model T, columns ...string) error 
 }
 
 func (g *genericDBServiceImpl[T]) UpdateModel(model T, id uuid.UUID, columns ...string) error {
-
 	if res, err := g.db.NewUpdate().Model(&model).Column(columns...).Where("id = ?", id).
 		Exec(context.Background()); err != nil {
 		return err

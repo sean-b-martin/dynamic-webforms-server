@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/sean-b-martin/dynamic-webforms-server/database"
 	"github.com/sean-b-martin/dynamic-webforms-server/model"
@@ -12,6 +13,7 @@ type SchemaService interface {
 	GetSchemas(formID uuid.UUID) ([]model.FormSchemaModel, error)
 	GetSchema(formID uuid.UUID, schemaID uuid.UUID) (model.FormSchemaModel, error)
 	CreateSchema(formID uuid.UUID, userID uuid.UUID, formSchema model.FormSchemaModel) error
+	DeleteSchema(userID uuid.UUID, formID uuid.UUID, schemaID uuid.UUID) error
 }
 
 func NewSchemaService(db *bun.DB) SchemaService {
@@ -31,7 +33,7 @@ func (s *SchemaServiceImpl) GetSchema(formID uuid.UUID, schemaID uuid.UUID) (mod
 	return s.dbService.GetModel("id = ? AND form_id = ? ", schemaID, formID)
 }
 
-func (s *SchemaServiceImpl) CreateSchema(formID uuid.UUID, userID uuid.UUID, schema model.FormSchemaModel) error {
+func (s *SchemaServiceImpl) CreateSchema(userID uuid.UUID, formID uuid.UUID, schema model.FormSchemaModel) error {
 	tx, err := s.db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
@@ -39,8 +41,8 @@ func (s *SchemaServiceImpl) CreateSchema(formID uuid.UUID, userID uuid.UUID, sch
 	defer database.TXLogErrRollback(&tx)
 
 	schema.FormID = formID
-	if !isFormOwner(&tx, formID, userID) {
-		return ErrNoPermission
+	if err := isFormOwner(&tx, formID, userID); err != nil {
+		return err
 	}
 
 	_, err = tx.NewInsert().Model(&schema).Column("title", "version", "schema", "read_only", "form_id").
@@ -52,18 +54,43 @@ func (s *SchemaServiceImpl) CreateSchema(formID uuid.UUID, userID uuid.UUID, sch
 	return tx.Commit()
 }
 
-func isFormOwner(tx *bun.Tx, formID uuid.UUID, userID uuid.UUID) bool {
-	var form model.FormModel
-	err := tx.NewSelect().Model((*model.FormModel)(nil)).Column("user_id").Where("id = ?", formID).
-		Scan(context.Background(), form)
+func (s *SchemaServiceImpl) DeleteSchema(userID uuid.UUID, formID uuid.UUID, schemaID uuid.UUID) error {
+	tx, err := s.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+	defer database.TXLogErrRollback(&tx)
+
+	if err := isFormOwner(&tx, formID, userID); err != nil {
+		return err
+	}
+
+	res, err := tx.NewDelete().Model((*model.FormSchemaModel)(nil)).
+		Where("id = ? AND form_id = ? ", schemaID, formID).Exec(context.Background())
 
 	if err != nil {
-		return false
+		return err
+	}
+
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return tx.Commit()
+}
+
+func isFormOwner(tx *bun.Tx, formID uuid.UUID, userID uuid.UUID) error {
+	var form model.FormModel
+	err := tx.NewSelect().Model((*model.FormModel)(nil)).Column("user_id").Where("id = ?", formID).
+		Scan(context.Background(), &form)
+
+	if err != nil {
+		return err
 	}
 
 	if form.UserID != userID.String() {
-		return false
+		return ErrNoPermission
 	}
 
-	return true
+	return nil
 }
