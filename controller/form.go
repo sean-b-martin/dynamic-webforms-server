@@ -38,7 +38,7 @@ func (c *FormController) GetForms(ctx *fiber.Ctx) error {
 
 func (c *FormController) GetForm(ctx *fiber.Ctx) error {
 	var formID requestPathFormID
-	if ok := parseAndValidateRequestData(ctx, &formID, nil); !ok {
+	if !parseAndValidateRequestData(ctx, &formID, nil) {
 		return nil
 	}
 
@@ -65,7 +65,7 @@ func (c *FormController) GetMyForms(ctx *fiber.Ctx) error {
 
 func (c *FormController) CreateForm(ctx *fiber.Ctx) error {
 	var form requestDataTitle
-	if ok := parseAndValidateRequestData(ctx, nil, &form); !ok {
+	if !parseAndValidateRequestData(ctx, nil, &form) {
 		return nil
 	}
 
@@ -80,7 +80,7 @@ func (c *FormController) UpdateForm(ctx *fiber.Ctx) error {
 	var formID requestPathFormID
 	var form requestDataTitle
 
-	if ok := parseAndValidateRequestData(ctx, &formID, &form); !ok {
+	if !parseAndValidateRequestData(ctx, &formID, &form) {
 		return nil
 	}
 
@@ -93,7 +93,7 @@ func (c *FormController) UpdateForm(ctx *fiber.Ctx) error {
 
 func (c *FormController) DeleteForm(ctx *fiber.Ctx) error {
 	var formID requestPathFormID
-	if ok := parseAndValidateRequestData(ctx, nil, &formID); !ok {
+	if !parseAndValidateRequestData(ctx, nil, &formID) {
 		return nil
 	}
 

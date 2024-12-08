@@ -42,7 +42,7 @@ func (u *UserController) GetCurrentLogin(ctx *fiber.Ctx) error {
 
 func (u *UserController) LoginUser(ctx *fiber.Ctx) error {
 	var user requestDataUser
-	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
+	if !parseAndValidateRequestData(ctx, nil, &user) {
 		return nil
 	}
 
@@ -56,7 +56,7 @@ func (u *UserController) LoginUser(ctx *fiber.Ctx) error {
 
 func (u *UserController) RegisterUser(ctx *fiber.Ctx) error {
 	var user requestDataUser
-	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
+	if !parseAndValidateRequestData(ctx, nil, &user) {
 		return nil
 	}
 
@@ -72,7 +72,7 @@ func (u *UserController) RegisterUser(ctx *fiber.Ctx) error {
 
 func (u *UserController) UpdateUser(ctx *fiber.Ctx) error {
 	var user requestDataUpdateUser
-	if ok := parseAndValidateRequestData(ctx, nil, &user); !ok {
+	if !parseAndValidateRequestData(ctx, nil, &user) {
 		return nil
 	}
 
