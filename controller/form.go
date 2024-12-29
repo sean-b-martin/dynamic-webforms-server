@@ -44,7 +44,7 @@ func (c *FormController) GetForm(ctx *fiber.Ctx) error {
 
 	form, err := c.service.GetForm(formID.FormID)
 	if err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	return ctx.Status(fiber.StatusOK).JSON(form)
@@ -53,7 +53,7 @@ func (c *FormController) GetForm(ctx *fiber.Ctx) error {
 func (c *FormController) GetMyForms(ctx *fiber.Ctx) error {
 	forms, err := c.service.GetFormsOfUser(ctx.Locals(middleware.UserIDLocal).(uuid.UUID))
 	if err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	if forms == nil {
@@ -70,7 +70,7 @@ func (c *FormController) CreateForm(ctx *fiber.Ctx) error {
 	}
 
 	if err := c.service.CreateForm(ctx.Locals(middleware.UserIDLocal).(uuid.UUID), form.Title); err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	return ctx.SendStatus(fiber.StatusCreated)
@@ -85,7 +85,7 @@ func (c *FormController) UpdateForm(ctx *fiber.Ctx) error {
 	}
 
 	if err := c.service.UpdateForm(ctx.Locals(middleware.UserIDLocal).(uuid.UUID), formID.FormID, form.Title); err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	return ctx.SendStatus(fiber.StatusOK)
@@ -98,7 +98,7 @@ func (c *FormController) DeleteForm(ctx *fiber.Ctx) error {
 	}
 
 	if err := c.service.DeleteForm(ctx.Locals(middleware.UserIDLocal).(uuid.UUID), formID.FormID); err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	return ctx.SendStatus(fiber.StatusOK)

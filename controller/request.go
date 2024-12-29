@@ -65,9 +65,9 @@ type requestDataCreateSchema struct {
 }
 
 type requestDataUpdateSchema struct {
-	Title    string `json:"title" validate:"min=1,max=256"`
-	Schema   []byte `json:"schema"`
-	ReadOnly bool   `json:"readOnly"`
+	Title    *string `json:"title,omitempty" validate:"min=1,max=256"`
+	Schema   *[]byte `json:"schema,omitempty"`
+	ReadOnly *bool   `json:"readOnly,omitempty"`
 }
 
 // path structs

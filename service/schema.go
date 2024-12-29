@@ -13,11 +13,12 @@ type SchemaService interface {
 	GetSchemas(formID uuid.UUID) ([]model.FormSchemaModel, error)
 	GetSchema(formID uuid.UUID, schemaID uuid.UUID) (model.FormSchemaModel, error)
 	CreateSchema(formID uuid.UUID, userID uuid.UUID, formSchema model.FormSchemaModel) error
+	UpdateSchema(username uuid.UUID, formID uuid.UUID, schemaID uuid.UUID, schemaData map[string]interface{}) error
 	DeleteSchema(userID uuid.UUID, formID uuid.UUID, schemaID uuid.UUID) error
 }
 
 func NewSchemaService(db *bun.DB) SchemaService {
-	return &SchemaServiceImpl{db: db}
+	return &SchemaServiceImpl{db: db, dbService: NewGenericDBService[model.FormSchemaModel](db)}
 }
 
 type SchemaServiceImpl struct {
@@ -48,6 +49,28 @@ func (s *SchemaServiceImpl) CreateSchema(userID uuid.UUID, formID uuid.UUID, sch
 	_, err = tx.NewInsert().Model(&schema).Column("title", "version", "schema", "read_only", "form_id").
 		Exec(context.Background())
 	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *SchemaServiceImpl) UpdateSchema(username uuid.UUID, formID uuid.UUID, schemaID uuid.UUID, schemaData map[string]interface{}) error {
+	tx, err := s.db.BeginTx(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+	defer database.TXLogErrRollback(&tx)
+
+	if err := isFormOwner(&tx, formID, username); err != nil {
+		return err
+	}
+
+	query := tx.NewUpdate().Model((*model.FormSchemaModel)(nil)).Where("id = ? AND form_id = ? ", schemaID, formID)
+	for k, v := range schemaData {
+		query.SetColumn(k, "?", v)
+	}
+	if _, err := query.Exec(context.Background()); err != nil {
 		return err
 	}
 

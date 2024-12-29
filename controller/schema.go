@@ -14,7 +14,7 @@ type SchemaController struct {
 
 func NewSchemaController(router fiber.Router, authMiddleware *middleware.JWTAuth, service service.SchemaService) *SchemaController {
 	controller := SchemaController{service: service}
-	router.Get("/", controller.GetFormSchemas)
+	router.Get("/schemas", controller.GetFormSchemas)
 	router.Get("/:schemaID", controller.GetSchema)
 	router.Post("/", authMiddleware.Handle(), controller.CreateSchema)
 	router.Patch("/:schemaID", authMiddleware.Handle(), controller.UpdateSchema)
@@ -31,13 +31,12 @@ func (s *SchemaController) GetFormSchemas(ctx *fiber.Ctx) error {
 
 	schemas, err := s.service.GetSchemas(formID.FormID)
 	if err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	if len(schemas) == 0 {
 		return ctx.Status(fiber.StatusOK).JSON([]struct{}{})
 	}
-
 	return ctx.Status(fiber.StatusOK).JSON(schemas)
 }
 
@@ -49,16 +48,15 @@ func (s *SchemaController) GetSchema(ctx *fiber.Ctx) error {
 
 	schema, err := s.service.GetSchema(ids.FormID, ids.SchemaID)
 	if err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
-
 	return ctx.Status(fiber.StatusOK).JSON(schema)
 }
 
 func (s *SchemaController) CreateSchema(ctx *fiber.Ctx) error {
 	var formID requestPathFormID
 	var schemaData requestDataCreateSchema
-	if !parseAndValidateRequestData(ctx, &formID, schemaData) {
+	if !parseAndValidateRequestData(ctx, &formID, &schemaData) {
 		return nil
 	}
 
@@ -70,14 +68,36 @@ func (s *SchemaController) CreateSchema(ctx *fiber.Ctx) error {
 	})
 
 	if err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	return ctx.SendStatus(fiber.StatusCreated)
 }
 
 func (s *SchemaController) UpdateSchema(ctx *fiber.Ctx) error {
-	return fiber.ErrInternalServerError
+	var id requestPathFormAndSchemaID
+	var schema requestDataUpdateSchema
+	if !parseAndValidateRequestData(ctx, &id, &schema) {
+		return nil
+	}
+
+	schemaModel := make(map[string]interface{})
+	if schema.Title != nil {
+		schemaModel["title"] = *schema.Title
+	}
+	if schema.Schema != nil {
+		schemaModel["schema"] = *schema.Schema
+	}
+	if schema.ReadOnly != nil {
+		schemaModel["read_only"] = *schema.ReadOnly
+	}
+
+	err := s.service.UpdateSchema(ctx.Locals(middleware.UserIDLocal).(uuid.UUID), id.FormID, id.SchemaID, schemaModel)
+	if err != nil {
+		return handleServiceErr(ctx, err)
+	}
+
+	return ctx.SendStatus(fiber.StatusOK)
 }
 
 func (s *SchemaController) DeleteSchema(ctx *fiber.Ctx) error {
@@ -88,7 +108,7 @@ func (s *SchemaController) DeleteSchema(ctx *fiber.Ctx) error {
 	}
 
 	if err := s.service.DeleteSchema(ctx.Locals(middleware.UserIDLocal).(uuid.UUID), ids.FormID, ids.SchemaID); err != nil {
-		return serviceErrToResponse(ctx, err)
+		return handleServiceErr(ctx, err)
 	}
 
 	return ctx.SendStatus(fiber.StatusOK)
